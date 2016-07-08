@@ -1,4 +1,4 @@
-/*****************Класс - бинарное дерево**********************/
+﻿/*****************Класс - бинарное дерево**********************/
 function BinaryTree() {
 	this.root = null;
 	this.coordinates=new Array();
@@ -60,84 +60,69 @@ BinaryTree.prototype = {
         
         inOrder(this.root); 
     },
+	/************Глубина дерева********************/
+	Depth: function (node) {
+		if(node == null)
+			return 0;
+		var left, right;
+		if (node.left != null) {
+			left = this.Depth(node.left);
+		} else left = 0;
+		if (node.right != null) {
+			right = this.Depth(node.right);
+		} else right = 0;
+		var max = left > right ? left : right;
+		return max+1;			
+	},	
+	
+	
 	/****************Функция расчёта координат************/
 	Update: function(x_distance,y_distance,x,y) {
 		var tree=this;
 		var c_x=x;
-		function children_count(node) {
-			var count_ch = 0;
-			if (node != null) {
-				count_ch += 1;
-				count_ch += children_count(node.left);
-				count_ch += children_count(node.right);
-			}
-			return count_ch;
-		}	
-		
 		/****вспомогательная функция******************/
 		function UpdateNode(root, x, y, block) {
 			if (root == null)
 				return;			
-			block.call(this, root.value,x, y, x, y);
-			var count_r=0;
-			var count_l=0;
-			
-			if (root.left)
-				count_l=children_count(root.left.right);
-			if (root.right)
-				count_r=children_count(root.right.left);
-			var max_count=Math.max(count_r,count_l)+1;
+			block.call(this, root.value,x, y, x, y,0);
+			var depth=tree.Depth(root);
 			if (root.left != null)
-				update_left(root.left, x, y, max_count,block);
+				update_left(root.left, x, y, depth,block);
 			if (root.right != null)
-				update_right(root.right, x, y,max_count, block);			
+				update_right(root.right, x, y,depth, block);			
 		}
 		/****вспомогательная функция (левое поддерево)*************/
-		function update_left(node, parent_x, parent_y,count, block) {
-			var count_r=0;
-			var count_l=0;
-			if (node.left)
-				count_l=children_count(node.left.right);
-			if (node.right)
-				count_r=children_count(node.right.left);
-			var max_count=Math.max(count_r,count_l);
-			var x = parent_x - x_distance - (count*x_distance);
+		function update_left(node, parent_x, parent_y,depth, block) {
+			var count= Math.pow(2,depth-2);
+			var nextDepth=depth-1;
+			var x = parent_x - (count*x_distance);
 			var y = parent_y + y_distance;
-			block.call(this, node.value, x, y, parent_x, parent_y);
+			block.call(this, node.value, x, y, parent_x, parent_y,count*x_distance);
 			
 			if (node.left != null)
-				update_left(node.left, x, y,max_count, block);
+				update_left(node.left, x, y,nextDepth, block);
 			if (node.right != null)
-				update_right(node.right, x, y,max_count, block);
+				update_right(node.right, x, y,nextDepth, block);
 		}
 		/****вспомогательная функция (правое поддерево)*************/
-		function update_right(node, parent_x, parent_y,count, block) {
-			var count_r=0;
-			var count_l=0;
-			if (node.left)
-				count_l=children_count(node.left.right);
-			if (node.right)
-				count_r=children_count(node.right.left);
-			var max_count=Math.max(count_r,count_l);
-			//alert(count_r+" "+count_l);
-			/*count=1;
-			if (parent_x==c_x)
-				count=2;*/
-			
-			var x = parent_x + x_distance + (count*x_distance);
+		function update_right(node, parent_x, parent_y,depth, block) {
+			var count= Math.pow(2,depth-2);
+			var nextDepth=depth-1;
+			var x = parent_x +  (count*x_distance);
 			var y = parent_y + y_distance;
-			block.call(this, node.value,x,y, parent_x, parent_y);
+			block.call(this, node.value,x,y, parent_x, parent_y,count*x_distance);
 			if (node.left != null)
-				update_left(node.left, x, y,max_count, block); 
+				update_left(node.left, x, y,nextDepth, block); 
 			if (node.right != null)
-				update_right(node.right, x, y,max_count, block); 
+				update_right(node.right, x, y,nextDepth, block); 
 		}
 		/*********вспомогательная функция сохранения координат************/
-		function setCoordinates(value,x,y,parent_x,parent_y) {
+		function setCoordinates(value,x,y,parent_x,parent_y, distance) {
 			tree.coordinates[value]={
 				value: value,
 				parent_x: parent_x,
 				parent_y: parent_y,
+				distance: distance,
 				x: x,
 				y:y
 			};
@@ -222,35 +207,49 @@ function AnimatedBinaryTree(canvasSelector, radiusNodes) {
 	
 	//Отрисовка узлов и ребёр
 	function Draw(nodes) {
-		self.tree.Update(30,70,550,150);
-		var delay=3000;
-		var delay_line=4500;
+		self.tree.Update(25,50,650,150);
+		var delay=1000;
+		var delay_line=2000;
 		var index=0;
 		nodes.forEach(function(item) {
 			//delay_line=delay_line+i*100;
-			var x1=self.tree.coordinates[item].parent_x;
+			//var x1=self.tree.coordinates[item].parent_x;
+			var x1;
 			var x2=self.tree.coordinates[item].parent_x;
-			var y1=self.tree.coordinates[item].parent_y+self.radiusNodes;
+			var y1=self.tree.coordinates[item].parent_y;
 			var y2=self.tree.coordinates[item].parent_y+self.radiusNodes;
 			var y3=self.tree.coordinates[item].y-self.radiusNodes;
 			var x=self.tree.coordinates[item].x;
 			var y=self.tree.coordinates[item].y;
-			//alert(x1+" "+x2+" "+x);
-			if (self.tree.coordinates[item].parent_x-self.tree.coordinates[item].x)
-					$('canvas').drawLine({
+			var temp=self.tree.coordinates[item];
+			if (temp.parent_x-x<0) {
+				x1=temp.parent_x+self.radiusNodes;
+				x2=x1+temp.distance/3-3;
+				y2=y1;
+			}
+			else {
+				x1=temp.parent_x-self.radiusNodes;
+				x2=x1-temp.distance/3+3;
+				y2=y1;
+			}
+			if (temp.parent_x-temp.x)	
+				$('canvas').drawQuadratic({
 					  name: 'line'+item,
-					  layer: true,
+					  visible: false,
 					  strokeStyle: 'orange',
-					  opacity: 0.5,
 					  strokeWidth: 3,
-					  x1: x1, 
-					  y1: y1,
-					  x2: x2,  
-					  y2: y2,
-					  visible: false
+					  x1: x1, y1: y1,
+					  opacity: 0.5,
+					  layer: true,
+					  arrowAngle: 60,
+					  arrowRadius: 9,
+					  endArrow: true,
+					  // Start point
+					  cx1: x1, cy1: y1, // Control point
+					  x2: x1, y2: y1// End point
 					});
 			self.$canvas.delayLayerGroup('node'+item, index*delay);
-			self.$canvas.delayLayer('line'+item, (index+1)*delay+index*index*100);
+			self.$canvas.delayLayer('line'+item, (index)*delay_line+index*index*2);
 			self.$canvas.animateLayerGroup('node'+item, 
 				{
 				  x: x, 
@@ -267,13 +266,13 @@ function AnimatedBinaryTree(canvasSelector, radiusNodes) {
 				}
 			);
 			self.$canvas.animateLayer('line'+item,{
-				x2: x,  
-				y2: y3,
+				cx1: temp.x, cy1: y1, // Control point
+				x2: temp.x, y2: temp.y-self.radiusNodes,// End point
 				visible:true},
 				delay_line,
 				function(layer) {
 					$(this).animateLayer(layer, {		
-						visible:true	
+						visible:true,
 					},
 					delay_line);
 				}
@@ -282,20 +281,28 @@ function AnimatedBinaryTree(canvasSelector, radiusNodes) {
 	});
 	setTimeout(function() {
 			self.isDraw=true;
-		},48000)
+		},22000)
 	}
 	
 	//Генерация случайного дерева
 	this.randomGenerate = function () {
 		Clear();
-		var nodes=new Array(11);
-		for (i=0; i<11; i++) {
-			var temp=Math.floor(Math.random()*1001)%100;
-			while(nodes.includes(temp))
-				temp=Math.floor(Math.random()*1001)%100;
-			nodes[i]=temp;
-			self.tree.add(temp);
-		}
+		var nodes;
+		do {
+			delete nodes;
+			delete self.tree;
+			self.tree=new BinaryTree();
+			nodes=new Array(11);
+			nodes[0]=Math.floor(Math.random()*1001)%10+50;
+			self.tree.add(nodes[0]);
+			for (i=1; i<11; i++) {
+				var temp=Math.floor(Math.random()*1001)%100;
+				while(nodes.includes(temp))
+					temp=Math.floor(Math.random()*1001)%100;
+				nodes[i]=temp;
+				self.tree.add(temp);
+			}
+		} while(self.tree.Depth(self.tree.root)>5);
 		self.isBuild=true;
 		FillArray(nodes);
 		Draw(nodes);
